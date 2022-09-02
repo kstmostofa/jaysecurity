@@ -1,0 +1,2 @@
+[21-Apr-2022 07:17:46 UTC] PHP Warning:  require(/home3/jaysecurity/sms.jaysecurity.in/public/../vendor/autoload.php): failed to open stream: No such file or directory in /home3/jaysecurity/sms.jaysecurity.in/public/index.php on line 34
+[21-Apr-2022 07:17:46 UTC] PHP Fatal error:  require(): Failed opening required '/home3/jaysecurity/sms.jaysecurity.in/public/../vendor/autoload.php' (include_path='.:/opt/alt/php74/usr/share/pear') in /home3/jaysecurity/sms.jaysecurity.in/public/index.php on line 34
