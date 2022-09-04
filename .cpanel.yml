@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home3/jaysecurity/sms.jaysecurity.in
+    - /bin/cp -R . $DEPLOYPATH
