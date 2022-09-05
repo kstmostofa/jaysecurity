@@ -81,7 +81,7 @@
                                     <span class="d-block text-sm font-weight-bold mb-0">{{\Auth::user()->countUsers()}}</span>
                                     <span class="d-block text-sm text-muted">{{__('Users')}}</span>
                                 </div>
-                                <div class="col-6 text-center">
+                                <div class="col-6 text-center ">
                                     <span class="d-block text-sm font-weight-bold mb-0">{{\Auth::user()->countEmployees()}}</span>
                                     <span class="d-block text-sm text-muted">{{__('Employees')}}</span>
                                 </div>
@@ -95,3 +95,15 @@
 @endsection
 
 
+
+
+@push('script-page')
+<script>
+    $(document).ready(function () {
+        $('#branch').hide();
+    
+});
+       
+   
+</script>
+@endpush

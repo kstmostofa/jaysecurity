@@ -28,9 +28,9 @@
                 @enderror
             </div>
         @endif
-        <div class="form-group col-lg-6 col-md-6">
+        <div class="form-group col-lg-6 col-md-6" id="branch">
             {{ Form::label('branch', __('Branch'), ['class' => 'form-control-label']) }}
-            {!! Form::select('branch', $branch, null, ['class' => 'form-control select2', 'required' => 'required']) !!}
+            {!! Form::select('branch', $branch, null, ['class' => 'form-control select2 branch', 'required' => 'required']) !!}
             @error('branch')
                 <span class="invalid-role" role="alert">
                     <strong class="text-danger">{{ $message }}</strong>
@@ -53,15 +53,44 @@
             <input type="button" value="{{ __('Cancel') }}" class="btn-create bg-gray" data-dismiss="modal">
         </div>
     </div>
+    <script>
+        $(document).ready(function () {
+            $('#branch').hide();
+            $('.user_role').on('change', function() {
+        if ($(this).val() == '6') {
+            $('#branch').show();
+        } else {
+            $('#branch').hide();
+        }
+    })
+        
+    
+    });
+           
+       
+    </script>
     {!! Form::close() !!}
 </div>
 @push('script-page')
-    <script>
-        $(document).ready(function() {
-            $('.user_role').select2({
-                placeholder: 'Select Role',
-                allowClear: true
-            });
-        });
-    </script>
+{{-- <script>
+    $(document).ready(function () {
+        $('#branch').hide();
+    $('.user_role').on('change', function() {
+        if ($(this).val() === '') {
+            console.log('ok');
+
+            $('.branch').show();
+
+        } else {
+     
+            $('.branch').hide();
+
+        }
+    })
+});
+       
+   
+</script> --}}
+
+
 @endpush
