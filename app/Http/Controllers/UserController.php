@@ -109,13 +109,19 @@ class UserController extends Controller
                             mkdir($dir, 0777, true);
                         }
                         $path = $request->file('avatar')->storeAs('uploads/avatar/', $fileNameToStore);
+                        if($role_r->name =="Area officer"){
+                            $branch_id = $request['branch'];
+                        }else{
+                            $branch_id = null;
+                        }
+                        
                         $user   = User::create(
                             [
                                 'name' => $request['name'],
                                 'email' => $request['email'],
                                 'password' => Hash::make($request['password']),
                                 'type' => $role_r->name,
-                                'branch_id' => $request['branch'],
+                                'branch_id' => $branch_id,
                                 'avatar' => null,
                                 'lang' => !empty($default_language) ? $default_language->value : '',
                                 'created_by' => \Auth::user()->id,
@@ -123,13 +129,18 @@ class UserController extends Controller
                         );
                         $user->assignRole($role_r);
                     } else {
+                        if($role_r->name =="Area officer"){
+                            $branch_id = $request['branch'];
+                        }else{
+                            $branch_id = null;
+                        }
                         $user   = User::create(
                             [
                                 'name' => $request['name'],
                                 'email' => $request['email'],
                                 'password' => Hash::make($request['password']),
                                 'type' => $role_r->name,
-                                'branch_id' => $request['branch'],
+                                'branch_id' => $branch_id,
                                 'avatar' => $request['avatar'],
                                 'lang' => !empty($default_language) ? $default_language->value : '',
                                 'created_by' => \Auth::user()->id,
