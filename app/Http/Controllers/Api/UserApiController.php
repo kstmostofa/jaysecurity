@@ -18,6 +18,7 @@ class UserApiController extends Controller
 {
     public function register_user(Request $request)
     {
+        return 'ddd';
         $validator = \Validator::make(
             $request->all(),
             [

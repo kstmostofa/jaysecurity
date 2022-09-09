@@ -41,7 +41,7 @@ class UserController extends Controller
     {
         if (\Auth::user()->can('Create User')) {
             $user  = \Auth::user();
-            $branch = Branch::where('created_by', '=', $user->creatorId())->get()->pluck('name', 'id');;
+            $branch = Branch::where('created_by', '=', $user->creatorId())->get()->pluck('name', 'id');
             $roles = Role::where('created_by', '=', $user->creatorId())->where('name', '!=', 'employee')->get()->pluck('name', 'id');
 
             return view('user.create', compact('roles', 'branch'));
@@ -181,8 +181,9 @@ class UserController extends Controller
         if (\Auth::user()->can('Edit User')) {
             $user  = User::find($id);
             $roles = Role::where('created_by', '=', $user->creatorId())->where('name', '!=', 'employee')->get()->pluck('name', 'id');
+            $branch = Branch::where('created_by', '=', $user->creatorId())->get()->pluck('name', 'id');
 
-            return view('user.edit', compact('user', 'roles'));
+            return view('user.edit', compact('user', 'roles','branch'));
         } else {
             return response()->json(['error' => __('Permission denied.')], 401);
         }
@@ -205,7 +206,9 @@ class UserController extends Controller
 
         if (\Auth::user()->type == 'super admin') {
             $user  = User::findOrFail($id);
+
             $input = $request->all();
+            
             $user->fill($input)->save();
         } else {
             $user = User::findOrFail($id);

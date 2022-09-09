@@ -1156,8 +1156,10 @@ class UserApiController extends Controller
             ]);
         }
         ///////validation
+        //  return($request->fields);
         $error_msg = array();
         $fields = Employee_field::where('status', '=', '1')->get();
+        // return $fields;
         // echo count($request->fields);die;
         foreach ($fields as  $value) {
             $field_id = $value->id;
@@ -1451,7 +1453,8 @@ class UserApiController extends Controller
             $res = [
                 'status' => 200,
                 'timestamp' => $current_date_time,
-                'responseMessage' => 'You get data successfully',
+                'bbbb' =>$company_unit_data,
+                'responseMessage' => 'You get all data successfully',
                 'path' => '/list_emp',
                 'data' => $final_list
             ];
@@ -1745,5 +1748,74 @@ class UserApiController extends Controller
 
         //add not authorized message to response
 
+    }
+
+    public function create_area_rounder(Request $request)
+    {
+        $current_date_time = Carbon::now()->toDateTimeString();
+        $validator = \Validator::make(
+            $request->all(),
+            [
+                'name'  => 'required',
+                'email' => 'required|unique:users',
+                'password' => 'required',
+                'role'     => 'required',
+                'branch' => 'required',
+                // 'avatar' => 'required|mimes:png,jpg,jpeg,csv,txt,xlx,xls,pdf|max:2048',
+                'avatar' => 'required',
+            ]
+        );
+        if ($validator->fails()) {
+            $messages = $validator->getMessageBag();
+            return response()->json([
+                'message' => $messages
+            ]);
+        }
+        //return($request->role);
+        $role_r = Role::find($request->role);
+
+        //return $role_r;
+
+        if ($request->hasFile('avatar')) {
+            $filenameWithExt = $request->file('avatar')->getClientOriginalName();
+            $filename        = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+            $extension       = $request->file('avatar')->getClientOriginalExtension();
+            $fileNameToStore = $filename . '.' . $extension;
+            $dir             = storage_path('uploads/avatar/');
+            $image_path      = $dir . $fileNameToStore;
+            // dd($image_path);
+            if (File::exists($image_path)) {
+                File::delete($image_path);
+            }
+            if (!file_exists($dir)) {
+                mkdir($dir, 0777, true);
+            }
+            $path = $request->file('avatar')->storeAs('uploads/avatar/', $fileNameToStore);
+        }
+        $user   = User::create(
+            [
+                'name' => $request['name'],
+                'email' => $request['email'],
+                'password' => Hash::make($request['password']),
+                'type' => $role_r->name,
+                'branch_id' => $request['branch'],
+                'avatar' => $request['avatar'],
+                'lang' => !empty($default_language) ? $default_language->value : '',
+                'created_by' => $this->auth->id,
+            ]
+        );
+        $user->assignRole($role_r);
+
+
+        $res = [
+            'status' => 200,
+            'timestamp' => $current_date_time,
+            'responseMessage' =>  $user,
+            'path' => '/create_area_rounder',
+        ];
+        return response()->json(
+            $res,
+            200
+        );
     }
 }
