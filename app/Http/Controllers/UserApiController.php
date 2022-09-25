@@ -69,9 +69,6 @@ class UserApiController extends Controller
         );
         if ($validator->fails()) {
             $messages = $validator->getMessageBag();
-            // return response()->json([
-            //  'message' => $messages
-            //    ]);
             $error = [
                 'error' => $messages
             ];
@@ -81,7 +78,6 @@ class UserApiController extends Controller
                 'responseMessage' =>  'email or password is incorrect',
                 'path' => '/login',
             ];
-            // return response()->json([$res],400);
             return response()->json(
                 $res,
                 400
@@ -90,21 +86,21 @@ class UserApiController extends Controller
         $credentials = $request->only('email', 'password');
         if (Auth::attempt($credentials)) {
             $user = User::where('email', $request->email)->first();
+            // return $user;
+            $branch_id = $user->branch_id;
             $user_arr = $user->toArray();
             $token = JWTAuth::fromUser($user);
             $data = array(
                 'api_token' => $token
             );
             $updated = User::where('email', $request->email)->update($data);
-            $user = User::where('email', $request->email)->first();
+            $user = User::where('email', $request->email)->with(['roles' => function ($query) {
+                $query->select('name', 'id');
+            }])->with(['branch'])->first();
+
             $user_arr = $user->toArray();
             if ($updated) {
-                // $res=[
-                //  'responseCode'=>1,
-                //  'userData' => $user_arr,
-                //  'message' => 'Verified',
-                // ];
-                // return response()->json($res);
+                array_push($data, $user_arr);
                 $res = [
                     'status' => 200,
                     'timestamp' => $current_date_time,
@@ -112,43 +108,29 @@ class UserApiController extends Controller
                     'path' => '/login',
                     'data' => $data
                 ];
-                // return response()->json($res);
                 return response()->json(
                     $res,
                     200
                 );
             } else {
-                // $res=[
-                //    'responseCode'=>0,
-                //    'message' => 'Some thing want wrong',
-                //   ];
-                //   return response()->json($res);
                 $res = [
                     'status' => 403,
                     'timestamp' => $current_date_time,
                     'responseMessage' => 'Some thing want wrong',
                     'path' => '/login',
                 ];
-                // return response()->json($res);
                 return response()->json(
                     $res,
                     403
                 );
             }
         } else {
-            ///invaild email and password
-            // $res=[
-            //      'responseCode'=>0,
-            //      'message' => 'invaild email and password',
-            //     ];
-            //     return response()->json($res);
             $res = [
                 'status' => 403,
                 'timestamp' => $current_date_time,
                 'responseMessage' => 'invaild email and password',
                 'path' => '/login',
             ];
-            // return response()->json($res);
             return response()->json(
                 $res,
                 403
@@ -570,6 +552,63 @@ class UserApiController extends Controller
         ];
         return response()->json($res, 200);
     }
+
+    public function edit_branch(Request $request, Branch $branch)
+    {
+        $current_date_time = Carbon::now()->toDateTimeString();
+        if (\Auth::user()->can('Edit Branch')) {
+
+            if ($branch->created_by == \Auth::user()->creatorId()) {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'name' => 'required',
+                    ]
+                );
+                if ($validator->fails()) {
+                    $messages = $validator->getMessageBag();
+                    return response()->json(['message' => $messages]);
+                }
+
+                $branch->name = $request->name;
+                $branch->save();
+
+
+                $res = [
+                    'status' => 200,
+                    'timestamp' => $current_date_time,
+                    'responseMessage' =>  $branch,
+                    'path' => '/edit-branch',
+                ];
+                return response()->json(
+                    $res,
+                    200
+                );
+            } else {
+                $res = [
+                    'status' => 400,
+                    'timestamp' => $current_date_time,
+                    'responseMessage' =>  'Permission denied.',
+                    'path' => '/edit-branch',
+                ];
+                return response()->json(
+                    $res,
+                    400
+                );
+            }
+        } else {
+            $res = [
+                'status' => 400,
+                'timestamp' => $current_date_time,
+                'responseMessage' =>  'Permission denied.',
+                'path' => '/edit-branch',
+            ];
+            return response()->json(
+                $res,
+                400
+            );
+        }
+    }
     public function get_all_department()
     {
         $res = array();
@@ -602,6 +641,8 @@ class UserApiController extends Controller
         ];
         return response()->json($result);
     }
+
+
     public function get_department_by_id(Request $request)
     {
         $validator = \Validator::make(
@@ -634,6 +675,65 @@ class UserApiController extends Controller
             'data' => $res,
         ];
         return response()->json($result);
+    }
+
+    public function edit_client_company(Request $request, Client_company $company)
+    {
+        $current_date_time = Carbon::now()->toDateTimeString();
+        if (\Auth::user()->can('Edit Company')) {
+
+            if ($company->created_by == \Auth::user()->creatorId()) {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'name' => 'required',
+                        'branch_id' => 'required',
+                    ]
+                );
+                if ($validator->fails()) {
+                    $messages = $validator->getMessageBag();
+                    return response()->json(['message' => $messages]);
+                }
+
+                $company->name = $request->name;
+                $company->branch_id = $request->branch_id;
+                $company->save();
+
+
+                $res = [
+                    'status' => 200,
+                    'timestamp' => $current_date_time,
+                    'responseMessage' =>  $company,
+                    'path' => '/edit_client_company',
+                ];
+                return response()->json(
+                    $res,
+                    200
+                );
+            } else {
+                $res = [
+                    'status' => 400,
+                    'timestamp' => $current_date_time,
+                    'responseMessage' =>  'Permission denied.',
+                    'path' => '/edit_client_company',
+                ];
+                return response()->json(
+                    $res,
+                    400
+                );
+            }
+        } else {
+            $res = [
+                'status' => 400,
+                'timestamp' => $current_date_time,
+                'responseMessage' =>  'Permission denied.',
+                'path' => '/edit_client_company',
+            ];
+            return response()->json(
+                $res,
+                400
+            );
+        }
     }
     public function get_client_company_with_unit()
     {
@@ -684,7 +784,7 @@ class UserApiController extends Controller
             $company = Client_company::where('id', $company_id)->first();
             $data['company_id'] = $company->id;
             $data['company_name'] = $company->name;
-            $data['company_city'] = $company->city;
+            $data['branch_name'] = $company->getBranch->name;
             $data['company_unit_id'] = $value->id;
             $data['company_unit_name'] = $value->name;
             $data['total_strength'] = Null;
@@ -700,6 +800,52 @@ class UserApiController extends Controller
             'data' => $res
         ];
         return response()->json($ress, 200);
+    }
+    public function edit_client_company_unit(Request $request, Client_company_unit $company_unit)
+    {
+        $current_date_time = Carbon::now()->toDateTimeString();
+        if (\Auth::user()->can('Edit Company Unit')) {
+
+            if ($company_unit->created_by == \Auth::user()->creatorId()) {
+                $validator = \Validator::make(
+                    $request->all(),
+                    [
+                        'name' => 'required',
+                        'company_id' => 'required',
+                    ]
+                );
+                if ($validator->fails()) {
+                    $messages = $validator->getMessageBag();
+                    return response()->json(['message' => $messages]);
+                }
+
+                $company_unit->name = $request->name;
+                if ($request->company_id) {
+                    $company_unit->company_id = $request->company_id;
+                }
+                $company_unit->save();
+                return response()->json(
+                    [
+                        'status' => 200,
+                        'timestamp' => $current_date_time,
+                        'responseMessage' =>  $company_unit,
+                        'path' => '/edit_client_company_unit',
+                    ],
+                    200
+                );
+            } else {
+                $res = [
+                    'status' => 400,
+                    'timestamp' => $current_date_time,
+                    'responseMessage' =>  'Permission denied.',
+                    'path' => '/edit_client_company_unit',
+                ];
+                return response()->json(
+                    $res,
+                    400
+                );
+            }
+        }
     }
 
     public function get_company_by_id(Request $request)
@@ -1135,17 +1281,11 @@ class UserApiController extends Controller
                 'dob' => 'required',
                 'gender' => 'required',
                 'role_id' => 'required',
-                // 'phone' => 'required',
-                // 'address' => 'required',
-                'email' => 'unique:users',
+                // 'email' => 'unique:users',
                 'aadhar_card_no' => 'required|numeric|digits:12|unique:employees',
-                // 'password' => 'required',
-                // 'department_id' => 'required',
-                // 'designation_id' => 'required',
-                // 'document.*' => 'mimes:jpeg,png,jpg,gif,svg,pdf,doc,zip|max:20480',
                 'branch_id' => 'required',
-                'company_id' => 'required',
-                'company_unit_id' => 'required',
+                // 'company_id' => 'required',
+                // 'company_unit_id' => 'required',
                 'created_by' => 'required',
             ]
         );
@@ -1303,16 +1443,16 @@ class UserApiController extends Controller
                 'aadhar_card_no' => $request['aadhar_card_no'],
                 'dob' => $request['dob'],
                 'gender' => $request['gender'],
-                // 'phone' => $request['phone'],
-                // 'address' => $request['address'],
-                // 'email' => $request['email'],
+                'phone' => $request['phone'],
+                'address' => $request['address'],
                 'email' => $email,
                 'random_no' => $random_no,
                 'role_id' => $request['role_id'],
-                // 'password' => Hash::make($request['password']),
                 'password' => Hash::make($random_no),
                 'employee_id' => $this->employeeNumber($request->created_by),
                 'branch_id' => $request['branch_id'],
+                'company_client_id' => $request['company_client_id'],
+                'company_client_unit_id' => $request['company_client_unit_id'],
                 'department_id' => $request['department_id'],
                 'designation_id' => $request['designation_id'],
                 'company_doj' => $request['company_doj'],
@@ -1321,8 +1461,6 @@ class UserApiController extends Controller
                 'account_number' => $request['account_number'],
                 'bank_name' => $request['bank_name'],
                 'bank_identifier_code' => $request['bank_identifier_code'],
-                // 'branch_location' => $request['branch_location'],
-                // 'tax_payer_id' => $request['tax_payer_id'],
                 'created_by' => $request['created_by'],
             ]
         );
@@ -1453,7 +1591,7 @@ class UserApiController extends Controller
             $res = [
                 'status' => 200,
                 'timestamp' => $current_date_time,
-                'bbbb' =>$company_unit_data,
+                'bbbb' => $company_unit_data,
                 'responseMessage' => 'You get all data successfully',
                 'path' => '/list_emp',
                 'data' => $final_list
@@ -1732,17 +1870,31 @@ class UserApiController extends Controller
     //Get All Area rounder
     public function get_all_area_rounder()
     {
+        $res = array();
         $current_date_time = Carbon::now()->toDateTimeString();
         $creator_id = $this->auth->id;
-        $area_rounders = User::where('type', 'Area officer')->where('created_by', $creator_id)->get()->toArray();
-        $res = [
+        $area_rounders = User::where('type', 'Area officer')->where('created_by', $creator_id)
+            ->with(['roles' => function ($query) {
+                $query->select('name', 'id');
+            }])->get();
+        foreach ($area_rounders as $value) {
+            // return $value;
+            $branch_id = $value->branch_id;
+            // $company = User::where('branch_id', $branch_id)->first();
+            $data['branch_name'] = $value->branch->name;
+            array_push($res, $data);
+        }
+        array_push($res, $area_rounders);
+        $ress = [
             'status' => 200,
             'timestamp' => $current_date_time,
+            'avatar_base_url' => "https://" . $_SERVER['HTTP_HOST'] . "/storage/avatar/",
             'responseMessage' =>  $area_rounders,
             'path' => '/get_all_area_rounder',
+
         ];
         return response()->json(
-            $res,
+            $ress,
             200
         );
 
@@ -1761,8 +1913,7 @@ class UserApiController extends Controller
                 'password' => 'required',
                 'role'     => 'required',
                 'branch' => 'required',
-                // 'avatar' => 'required|mimes:png,jpg,jpeg,csv,txt,xlx,xls,pdf|max:2048',
-                'avatar' => 'required',
+                'avatar' => 'required|mimes:png,jpg,jpeg|max:2048',
             ]
         );
         if ($validator->fails()) {
@@ -1780,10 +1931,10 @@ class UserApiController extends Controller
             $filenameWithExt = $request->file('avatar')->getClientOriginalName();
             $filename        = pathinfo($filenameWithExt, PATHINFO_FILENAME);
             $extension       = $request->file('avatar')->getClientOriginalExtension();
-            $fileNameToStore = $filename . '.' . $extension;
+            $fileNameToStore = $filename . '_' . time() . '.' . $extension;
             $dir             = storage_path('uploads/avatar/');
             $image_path      = $dir . $fileNameToStore;
-            // dd($image_path);
+            // return ($fileNameToStore);
             if (File::exists($image_path)) {
                 File::delete($image_path);
             }
@@ -1792,6 +1943,7 @@ class UserApiController extends Controller
             }
             $path = $request->file('avatar')->storeAs('uploads/avatar/', $fileNameToStore);
         }
+        // return $fileNameToStore;
         $user   = User::create(
             [
                 'name' => $request['name'],
@@ -1799,7 +1951,7 @@ class UserApiController extends Controller
                 'password' => Hash::make($request['password']),
                 'type' => $role_r->name,
                 'branch_id' => $request['branch'],
-                'avatar' => $request['avatar'],
+                'avatar' => $fileNameToStore,
                 'lang' => !empty($default_language) ? $default_language->value : '',
                 'created_by' => $this->auth->id,
             ]
@@ -1812,6 +1964,398 @@ class UserApiController extends Controller
             'timestamp' => $current_date_time,
             'responseMessage' =>  $user,
             'path' => '/create_area_rounder',
+        ];
+        return response()->json(
+            $res,
+            200
+        );
+    }
+
+    public function edit_area_rounder(Request $request)
+    {
+        $current_date_time = Carbon::now()->toDateTimeString();
+        $validator = \Validator::make(
+            $request->all(),
+            [
+                'id' => 'required',
+                'role_id' => 'required',
+                'branch_id' => 'required',
+                'name' => 'required',
+                'email' => 'unique:users,email,' . $request->id,
+
+            ]
+        );
+
+        if ($validator->fails()) {
+            $messages = $validator->getMessageBag();
+            return response()->json([
+                'message' => $messages
+            ]);
+        }
+
+        if ($this->auth->type == 'super admin') {
+            $user  = User::findOrFail($request->id);
+
+            $input = $request->all();
+
+            $user->fill($input)->save();
+        } else {
+            if ($request->hasFile('avatar')) {
+                $filenameWithExt = $request->file('avatar')->getClientOriginalName();
+                $filename        = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+                $extension       = $request->file('avatar')->getClientOriginalExtension();
+                $fileNameToStore = $filename . '_' . time() . '.' . $extension;
+                $dir             = storage_path('uploads/avatar/');
+                $image_path      = $dir . $fileNameToStore;
+                // return ($fileNameToStore);
+                if (File::exists($image_path)) {
+                    File::delete($image_path);
+                }
+                if (!file_exists($dir)) {
+                    mkdir($dir, 0777, true);
+                }
+                $path = $request->file('avatar')->storeAs('uploads/avatar/', $fileNameToStore);
+                $user = User::findOrFail($request->id);
+                $role          = Role::find($request->role_id);
+                $input         = $request->all();
+                $input['type'] = $role->name;
+                $input['avatar'] = $fileNameToStore;
+                $user->fill($input)->save();
+                $user->assignRole($role);
+            } else {
+                $user = User::findOrFail($request->id);
+                $role          = Role::find($request->role_id);
+                $input         = $request->all();
+                $input['type'] = $role->name;
+                // return $input;
+                $user->fill($input)->save();
+                $user->assignRole($role);
+            }
+        }
+
+        $res = [
+            'status' => 200,
+            'timestamp' => $current_date_time,
+            'responseMessage' =>  $user,
+            'path' => '/edit_area_rounder',
+        ];
+        return response()->json(
+            $res,
+            200
+        );
+    }
+
+    public function edit_employee(Request $request)
+
+    {
+        if (\Auth::user()->can('Edit Employee')) {
+            $validator = \Validator::make(
+                $request->all(),
+                [
+                    'name' => 'required',
+                    'aadhar_card_no' => 'required|numeric',
+                    'dob' => 'required',
+                    'gender' => 'required',
+                    'phone' => 'required|numeric',
+                    'address' => 'required',
+                    'document.*' => 'mimes:jpeg,png,jpg,gif,svg,pdf,doc,zip|max:20480',
+                    'company_client_id' => 'required',
+                    'company_client_unit_id' => 'required',
+                ]
+            );
+            if ($validator->fails()) {
+                $messages = $validator->getMessageBag();
+                return response()->json([
+                    'message' => $messages
+                ]);
+            }
+
+            ///////////////new code///////////////////////////
+            $c = 0;
+            $c_ = 0;
+            for ($i = 0; $i < $request->field_count; $i++) {
+
+                $validate_1 = array(
+                    'field_id' => $request->fields['id'][$i],
+                    'field_name'  => $request->fields['name'][$i],
+                    'field_type' => $request->fields['type'][$i],
+                    'field_mandatory'  => $request->fields['mandatory'][$i],
+
+                );
+
+                $validate_1 = \Validator::make($validate_1, [
+                    'field_id'    => 'required|numeric',
+                    'field_name'  => 'required',
+                    'field_type'  => 'required',
+                    'field_mandatory' => 'required|numeric',
+                ]);
+
+                if ($validate_1->fails()) {
+                    $validate_msg = $validate_1->getMessageBag();
+                    $validate_msg = 'Some thing went wrong';
+                    return redirect()->back()->withInput()->with('error', $validate_msg);
+                }
+                if ($request->fields['mandatory'][$i] == '1') {
+                    if ($request->fields['type'][$i] == 'file') {
+                        ///image data
+                        if ($request->file('files_' . $c)) {
+                            $validate_ = array(
+                                $request->fields['name'][$i]  => $request->file('files_' . $c),
+                            );
+
+                            $validate_ = \Validator::make($validate_, [
+                                $request->fields['name'][$i]   => 'required|mimes:pdf,png,jpg,jpeg',
+                            ]);
+                            if ($validate_->fails()) {
+                                $validate_msg = $validate_->getMessageBag();
+                                return redirect()->back()->withInput()->with('error', $validate_msg);
+                            }
+                        } else {
+                            if ($request->fields['value_old'][$c] == '') {
+                                $validate_msg = $request->fields['name'][$i] . "  filed required";
+                                return redirect()->back()->withInput()->with('error', $validate_msg);
+                            }
+                        }
+
+                        $c++;
+                        ///end
+                    } else if ($request->fields['type'][$i] == 'number') {
+                        $validate_ = array(
+                            $request->fields['name'][$i]  => $request->fields['value_' . $request->fields['id'][$i]],
+                        );
+
+                        $validate_ = \Validator::make($validate_, [
+                            $request->fields['name'][$i]   => 'required|numeric',
+                        ]);
+                        if ($validate_->fails()) {
+                            $validate_msg = $validate_->getMessageBag();
+                            return redirect()->back()->withInput()->with('error', $validate_msg);
+                        }
+                        // $c_++;
+                    } else if ($request->fields['type'][$i] == 'date') {
+                        $validate_ = array(
+                            $request->fields['name'][$i]  => $request->fields['value_' . $request->fields['id'][$i]],
+                        );
+
+                        $validate_ = \Validator::make($validate_, [
+                            $request->fields['name'][$i]   => 'required|date',
+                        ]);
+                        if ($validate_->fails()) {
+                            $validate_msg = $validate_->getMessageBag();
+                            return redirect()->back()->withInput()->with('error', $validate_msg);
+                        }
+                        $c_++;
+                    } else {
+                        $validate_ = array(
+                            $request->fields['name'][$i]  => $request->fields['value_' . $request->fields['id'][$i]],
+                        );
+
+                        $validate_ = \Validator::make($validate_, [
+                            $request->fields['name'][$i]   => 'required',
+                        ]);
+                        if ($validate_->fails()) {
+                            $validate_msg = $validate_->getMessageBag();
+                            return redirect()->back()->withInput()->with('error', $validate_msg);
+                        }
+                        $c_++;
+                    }
+                }
+            }
+
+            ////////////////End/////////////////////////
+            $employee = Employee::findOrFail($id);
+            ////////////extra field//////////////////////////
+            $count_field = count($request->fields['type']); //die;
+            $count_file = 0;
+            $count_other = 0;
+
+
+            for ($i = 0; $i < $request->field_count; $i++) {
+
+                if ($request->fields['type'][$i] == 'file') {
+                    // dd($request->file("fields"));
+
+                    if ($request->file('files_' . $count_file)) {
+
+                        // $file = $request->file("fields")['value'][$count_file];
+                        $file = $request->file('files_' . $count_file);
+
+                        $input['file'] = rand() . '.' . $file->getClientOriginalExtension();
+                        // dd($input['file']);
+                        $destinationPath = public_path() . "/uploads/";
+
+                        $extension = $request->file('files_' . $count_file)->extension();
+                        $name = $input['file'];
+                        $image = $request->file('files_' . $count_file);
+                        $image->move($destinationPath, $name);
+                        $count_file++;
+                        $data_field = array(
+                            'field_id' => $request->fields['id'][$i],
+                            'field_value' => $input['file'],
+                            'emp_id' =>  $employee->user_id,
+                            'created_by' => \Auth::user()->creatorId()
+                        );
+                    } else {
+                        $input['file'] = $request->fields['value_old'][$count_file];
+                        $count_file++;
+                        $data_field = array(
+                            'field_id' => $request->fields['id'][$i],
+                            'field_value' => $input['file'],
+                            'emp_id' =>  $employee->user_id,
+                            'created_by' => \Auth::user()->creatorId()
+                        );
+                    }
+                } else {
+                    if (isset($request->fields['value_' . $request->fields['id'][$i]])) {
+                        $data_field = array(
+                            'field_id'   => $request->fields['id'][$i],
+                            'field_value' => $request->fields['value_' . $request->fields['id'][$i]],
+                            'emp_id'     =>  $employee->user_id,
+                            'created_by' => \Auth::user()->creatorId()
+                        );
+                        $count_other++;
+                    }
+                }
+
+                $fields_id_ = 'fields_' . $request->fields['id'][$i];
+
+                if ($request->$fields_id_ == '0') {
+                    $field_query = Employee_field_data::insert($data_field);
+                } else {
+
+                    // $field_query =Employee_field_data::where('id',$fields_.$request->fields['id'][$i])->update($data_field);
+                    $field_query = Employee_field_data::where('id', $request->$fields_id_)->update($data_field);
+                    // dd($field_query);
+                }
+                // echo "<pre>";
+                // print_r($data_field);
+            } //dd();
+            //////////////end//////////////////////////
+
+
+            if ($request->document) {
+
+                foreach ($request->document as $key => $document) {
+                    if (!empty($document)) {
+                        $filenameWithExt = $request->file('document')[$key]->getClientOriginalName();
+                        $filename        = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+                        $extension       = $request->file('document')[$key]->getClientOriginalExtension();
+                        $fileNameToStore = $filename . '_' . time() . '.' . $extension;
+
+                        $dir        = storage_path('uploads/document/');
+                        $image_path = $dir . $filenameWithExt;
+
+                        if (File::exists($image_path)) {
+                            File::delete($image_path);
+                        }
+                        if (!file_exists($dir)) {
+                            mkdir($dir, 0777, true);
+                        }
+                        $path = $request->file('document')[$key]->storeAs('uploads/document/', $fileNameToStore);
+
+
+                        $employee_document = EmployeeDocument::where('employee_id', $employee->employee_id)->where('document_id', $key)->first();
+
+                        if (!empty($employee_document)) {
+                            $employee_document->document_value = $fileNameToStore;
+                            $employee_document->save();
+                        } else {
+                            $employee_document                 = new EmployeeDocument();
+                            $employee_document->employee_id    = $employee->employee_id;
+                            $employee_document->document_id    = $key;
+                            $employee_document->document_value = $fileNameToStore;
+                            $employee_document->save();
+                        }
+                    }
+                }
+            }
+
+            $employee = Employee::findOrFail($id);
+            $input    = $request->all();
+            $employee->fill($input)->save();
+            if ($request->salary) {
+                return redirect()->route('setsalary.index')->with('success', 'Employee successfully updated.');
+            }
+
+            if (\Auth::user()->type != 'employee') {
+                return redirect()->route('employee.index')->with('success', 'Employee successfully updated.');
+            } else {
+                return redirect()->route('employee.show', \Illuminate\Support\Facades\Crypt::encrypt($employee->id))->with('success', 'Employee successfully updated.');
+            }
+        } else {
+            return redirect()->back()->with('error', __('Permission denied.'));
+        }
+    }
+
+    public function user_status(Request $request, $id)
+    {
+
+        $current_date_time = Carbon::now()->toDateTimeString();
+
+        $validator = \Validator::make(
+            $request->all(),
+            [
+                'status' => 'required',
+
+            ]
+        );
+        //  return $request->all();
+        $user = User::findOrFail($id);
+
+        $user->status = $request->status;
+        $user->note = $request->note;
+        $user->save();
+
+        $user_details = ($user);
+
+
+
+        $employee = Employee::where('user_id', $id)->first();
+
+        $employee->status = $request->status;
+        $employee->note = $request->note;
+        $employee->save();
+        $user_arr = $user->toArray();
+        array_push($user_arr, $employee);
+        $res = [
+            'status' => 200,
+            'timestamp' => $current_date_time,
+            'responseMessage' =>  $user_arr,
+            'path' => '/edit_area_rounder',
+        ];
+        return response()->json(
+            $res,
+            200
+        );
+    }
+
+    //transfer area rounder to another company unit
+    public function transfer_area_rounder(Request $request, $id)
+    {
+        $current_date_time = Carbon::now()->toDateTimeString();
+        $validator = \Validator::make(
+            $request->all(),
+            [
+                'branch_id' => 'required',
+            ]
+        );
+
+        if ($validator->fails()) {
+            $messages = $validator->getMessageBag();
+            return response()->json([
+                'message' => $messages
+            ]);
+        }
+        $user = User::findOrFail($id);
+        $user->branch_id = $request->branch_id;
+        $user->save();
+        $user_arr = $user->toArray();
+        $res = [
+            'status' => 200,
+            'timestamp' => $current_date_time,
+            'responseMessage' =>  'Area Rounder Transfered Successfully',
+            'path' => '/transfer_area_rounder',
+            'data' => $user_arr
         ];
         return response()->json(
             $res,

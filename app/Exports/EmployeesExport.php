@@ -12,24 +12,25 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 class EmployeesExport implements FromCollection, WithHeadings
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         $data = Employee::get();
-        
-        foreach($data as $k => $employees)
-        {
+// dd($data);
+        foreach ($data as $k => $employees) {
 
-            $data[$k]["branch_id"]=$employees->branch->name;
-            $data[$k]["department_id"]=$employees->department->name;
-            $data[$k]["designation_id"]=$employees->designation->name;
-            $data[$k]["salary_type"]=!empty($employees->salary_type) ? $employees->salaryType->name :'-';
-            $data[$k]["salary"]=Employee::employee_salary($employees->salary);
-            $data[$k]["created_by"]=Employee::login_user($employees->created_by);
-            unset($employees->id,$employees->user_id,$employees->documents,$employees->tax_payer_id,$employees->is_active,$employees->created_at,$employees->updated_at);
+            $data[$k]["branch_id"] = !empty($employees->branch) ? $employees->branch->name : '-';
+            $data[$k]["company_client_id"] = !empty($employees->company_client_id) ? $employees->company->name : '-';
+            $data[$k]["company_client_unit_id"] = !empty($employees->company_client_unit_id) ? $employees->unit->name : '-';
+            $data[$k]["department_id"] = !empty($employees->department) ? $employees->department->name : '-';
+            $data[$k]["designation_id"] = !empty($employees->designation) ? $employees->designation->name : '-';
+            $data[$k]["salary_type"] = !empty($employees->salary_type) ? $employees->salaryType->name : '-';
+            $data[$k]["salary"] = Employee::employee_salary($employees->salary);
+            $data[$k]["created_by"] = Employee::login_user($employees->created_by);
+            unset($employees->id, $employees->user_id, $employees->documents, $employees->tax_payer_id, $employees->is_active, $employees->created_at, $employees->updated_at);
         }
-        
+// dd($employees);
         return $data;
     }
 
@@ -37,25 +38,32 @@ class EmployeesExport implements FromCollection, WithHeadings
     {
         return [
             "Name",
-            "Date of Birth",
+            "Adhar Card No",
+            "Date Of Birth",
             "Gender",
-            "Phone Number",
+            "Phone",
             "Address",
-            "Email ID",
+            "Email",
             "Password",
             "Employee ID",
             "Branch",
+            "Company",
+            "Company Unit",
             "Department",
             "Designation",
-            "Date of Join",
+            "Date Of Joining",
             "Account Holder Name",
             "Account Number",
             "Bank Name",
-            "Bank Identifier Code",
+            "Bank IFSC Code",
             "Branch Location",
             "Salary Type",
             "Salary",
-            "Created By"
+            "Created By",
+            "Role",
+            "Random Password",
+            "Note",
+            "Status"
         ];
     }
 }

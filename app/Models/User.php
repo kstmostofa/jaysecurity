@@ -84,6 +84,10 @@ class User extends Authenticatable implements JWTSubject
 
         return $branch;
     }
+    public function branch()
+    {
+        return $this->belongsTo('App\Models\Branch', 'branch_id', 'id');
+    }
 
     public function getLeaveType($leave_type)
     {

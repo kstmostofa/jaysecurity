@@ -28,7 +28,7 @@
 @endsection
 
 @php
-    $profile=asset(Storage::url('uploads/avatar/'));
+    $profile=asset('storage/avatar');
 @endphp
 @section('content')
     <div class="row">

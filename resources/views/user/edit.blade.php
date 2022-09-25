@@ -30,6 +30,21 @@
                 </span>
             @enderror
         </div>
+        @if(Auth::user()->type == "company")
+                    <div class="form-group col-lg-6 col-md-6">
+                        <label for="" class="form-control-label">Status</label>
+                       <select name="status" id="status" class="form-control form-control-sm">
+                            <option value="">Select Status</option>
+                            <option value="Pending" @if ($user->status == 'Pending') selected @endif >Pending</option>
+                            <option value="Active" @if ($user->status == 'Active') selected @endif>Active</option>
+                            <option value="Reject" @if ($user->status == 'Reject') selected @endif>Reject</option>
+                       </select>
+                    </div>
+                    <div class="form-group col-lg-6 col-md-6" id="note">
+                        <label for=""  class="form-control-label">Note</label>
+                        <textarea name="note"  id="" cols="5" rows="2" class="form-control">{{ $user->note }}</textarea>
+                    </div>
+                    @endif
         <div class="col-md-12">
             <input type="submit" value="{{__('Update')}}" class="btn-create badge-blue">
             <input type="button" value="{{__('Cancel')}}" class="btn-create bg-gray" data-dismiss="modal">
@@ -60,6 +75,17 @@
     })
     })
 
+</script>
+
+<script>
+    $('#note').hide();
+    $('#status').on('change', function() {
+        if ($(this).val() === 'Reject') {
+            $('#note').show();
+        } else{
+            $('#note').hide();  
+        }
+    })
 </script>
     
     {!! Form::close() !!}

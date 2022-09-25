@@ -42,6 +42,10 @@ class CreateEmployeesTable extends Migration
             $table->integer('salary')->nullable();
             $table->integer('is_active')->default('1');
             $table->integer('created_by');
+
+            $table->enum('status', ['Pending', 'Reject', 'Active'])->default('Pending');
+            $table->string('note')->nullable();
+
             $table->timestamps();
         }
         );

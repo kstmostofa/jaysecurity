@@ -357,7 +357,8 @@ class EmployeeController extends Controller
             $emp_field_data  = Employee_field_data::where('emp_id', $employee->user_id)->get();
             $fields = Employee_field::where('status', '=', '1')->get();
             $fields_atribute = Employee_field_atribute::get();
-            return view('employee.edit', compact('employee', 'employeesId', 'branches', 'departments', 'designations', 'documents', 'fields', 'fields_atribute', 'emp_field_data', 'company_client'));
+            // dd($company_client_unit);
+            return view('employee.edit', compact('employee', 'employeesId', 'branches', 'departments', 'designations', 'documents', 'fields', 'fields_atribute', 'emp_field_data', 'company_client', 'company_client_unit'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -377,8 +378,8 @@ class EmployeeController extends Controller
                     'phone' => 'required|numeric',
                     'address' => 'required',
                     'document.*' => 'mimes:jpeg,png,jpg,gif,svg,pdf,doc,zip|max:20480',
-                    'company_client_id' => 'required',
-                    'company_client_unit_id' => 'required',
+                    'company_client' => 'required',
+                    'company_client_unit' => 'required',
                 ]
             );
             if ($validator->fails()) {
@@ -589,6 +590,7 @@ class EmployeeController extends Controller
 
             $employee = Employee::findOrFail($id);
             $input    = $request->all();
+
             $employee->fill($input)->save();
             if ($request->salary) {
                 return redirect()->route('setsalary.index')->with('success', 'Employee successfully updated.');
@@ -657,8 +659,12 @@ class EmployeeController extends Controller
             $designations = Designation::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
             $employee     = Employee::find($empId);
             $employeesId  = \Auth::user()->employeeIdFormat($employee->employee_id);
-
-            return view('employee.show', compact('employee', 'employeesId', 'branches', 'departments', 'designations', 'documents'));
+            $emp_field_data  = Employee_field_data::where('emp_id', $employee->user_id)->get();
+            $fields = Employee_field::where('status', '=', '1')->get();
+            $fields_atribute = Employee_field_atribute::get();
+            $company_client   = Client_company::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
+            $company_client_unit  = Client_company_unit::where('created_by', \Auth::user()->creatorId())->get()->pluck('name', 'id');
+            return view('employee.show', compact('employee', 'employeesId', 'branches', 'departments', 'designations', 'documents', 'fields', 'fields_atribute', 'emp_field_data', 'company_client', 'company_client_unit'));
         } else {
             return redirect()->back()->with('error', __('Permission denied.'));
         }
@@ -705,12 +711,14 @@ class EmployeeController extends Controller
         }
 
         $employees = (new EmployeesImport())->toArray(request()->file('file'))[0];
+        // dd($employees);
         $totalCustomer = count($employees) - 1;
         $errorArray    = [];
 
         for ($i = 1; $i <= count($employees) - 1; $i++) {
 
             $employee = $employees[$i];
+            // dd($employee);
             $employeeByEmail = Employee::where('email', $employee[5])->first();
             $userByEmail = User::where('email', $employee[5])->first();
             // dd($userByEmail);
@@ -738,24 +746,27 @@ class EmployeeController extends Controller
 
 
             $employeeData->name                = $employee[0];
-            $employeeData->dob                 = $employee[1];
-            $employeeData->gender              = $employee[2];
-            $employeeData->phone               = $employee[3];
-            $employeeData->address             = $employee[4];
-            $employeeData->email               = $employee[5];
-            $employeeData->password            = Hash::make($employee[6]);
-            $employeeData->branch_id           = $employee[8];
-            $employeeData->department_id       = $employee[9];
-            $employeeData->designation_id      = $employee[10];
-            $employeeData->company_doj         = $employee[11];
-            $employeeData->account_holder_name = $employee[12];
-            $employeeData->account_number      = $employee[13];
-            $employeeData->bank_name           = $employee[14];
-            $employeeData->bank_identifier_code = $employee[15];
-            $employeeData->branch_location     = $employee[16];
-            $employeeData->tax_payer_id        = $employee[17];
+            $employeeData->aadhar_card_no      = $employee[1];
+            $employeeData->dob              = $employee[2];
+            $employeeData->gender               = $employee[3];
+            $employeeData->phone             = $employee[4];
+            $employeeData->address               = $employee[5];
+            $employeeData->email            = $employee[6];
+            $employeeData->password           = Hash::make($employee[7]);
+            // $employeeData->employee_id       = $employee[8];
+            $employeeData->branch_id      = $employee[9];
+            $employeeData->company_client_id         = $employee[10];
+            $employeeData->company_client_unit_id = $employee[11];
+            $employeeData->department_id      = $employee[12];
+            $employeeData->designation_id           = $employee[13];
+            $employeeData->company_doj = $employee[14];
+            $employeeData->account_holder_name     = $employee[15];
+            $employeeData->account_number        = $employee[16];
+            $employeeData->bank_name        = $employee[17];
+            $employeeData->bank_identifier_code        = $employee[18];
+            $employeeData->branch_location        = $employee[19];
+            $employeeData->tax_payer_id        = $employee[20];
             $employeeData->created_by          = \Auth::user()->creatorId();
-
             if (empty($employeeData)) {
 
                 $errorArray[] = $employeeData;

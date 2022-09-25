@@ -28,6 +28,8 @@ class CreateUsersTable extends Migration
             $table->timestamp('last_login')->nullable();
             $table->integer('is_active')->default('1');
             $table->string('created_by');
+            $table->enum('status', ['Pending', 'Reject', 'Active'])->default('Pending');
+            $table->string('note')->nullable();
             $table->rememberToken();
             $table->timestamps();
         }

@@ -31,7 +31,7 @@
 <?php $__env->stopSection(); ?>
 
 <?php
-    $profile=asset(Storage::url('uploads/avatar/'));
+    $profile=asset('storage/avatar');
 ?>
 <?php $__env->startSection('content'); ?>
     <div class="row">

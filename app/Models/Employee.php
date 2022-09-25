@@ -257,4 +257,14 @@ class Employee extends Model
             return $employee->salary;
         }
     }
+
+    public function company()
+    {
+        return $this->hasOne(Client_company::class, 'id', 'company_client_id');
+    }
+
+    public function unit()
+    {
+        return $this->hasOne(Client_company_unit::class, 'id', 'company_client_unit_id');
+    }
 }

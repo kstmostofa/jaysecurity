@@ -75,6 +75,7 @@ class UserController extends Controller
                         'email' => $request['email'],
                         'password' => Hash::make($request['password']),
                         'type' => 'company',
+                        'status' => 'Active',
                         'plan' => $plan = Plan::where('price', '<=', 0)->first()->id,
                         'lang' => !empty($default_language) ? $default_language->value : '',
                         'created_by' => \Auth::user()->id,
@@ -92,7 +93,7 @@ class UserController extends Controller
                 if ($total_user < $plan->max_users || $plan->max_users == -1) {
                     // dd($request->role);
                     $role_r = Role::findById($request->role);
-                    // dd($request->hasFile('avatar'));
+                    // dd($request->all());
                     if ($request->hasFile('avatar')) {
                         // dd($role_r);
                         $filenameWithExt = $request->file('avatar')->getClientOriginalName();
@@ -109,12 +110,32 @@ class UserController extends Controller
                             mkdir($dir, 0777, true);
                         }
                         $path = $request->file('avatar')->storeAs('uploads/avatar/', $fileNameToStore);
-                        if($role_r->name =="Area officer"){
+                        if ($role_r->name == "Area officer") {
                             $branch_id = $request['branch'];
-                        }else{
+                        } else {
                             $branch_id = null;
                         }
-                        
+                        // return($image_path);
+                        $user   = User::create(
+                            [
+                                'name' => $request['name'],
+                                'email' => $request['email'],
+                                'password' => Hash::make($request['password']),
+                                'type' => $role_r->name,
+                                'branch_id' => $branch_id,
+                                'avatar' => $fileNameToStore,
+                                'status' => 'Pending',
+                                'lang' => !empty($default_language) ? $default_language->value : '',
+                                'created_by' => \Auth::user()->id,
+                            ]
+                        );
+                        $user->assignRole($role_r);
+                    } else {
+                        if ($role_r->name == "Area officer") {
+                            $branch_id = $request['branch'];
+                        } else {
+                            $branch_id = null;
+                        }
                         $user   = User::create(
                             [
                                 'name' => $request['name'],
@@ -123,25 +144,6 @@ class UserController extends Controller
                                 'type' => $role_r->name,
                                 'branch_id' => $branch_id,
                                 'avatar' => null,
-                                'lang' => !empty($default_language) ? $default_language->value : '',
-                                'created_by' => \Auth::user()->id,
-                            ]
-                        );
-                        $user->assignRole($role_r);
-                    } else {
-                        if($role_r->name =="Area officer"){
-                            $branch_id = $request['branch'];
-                        }else{
-                            $branch_id = null;
-                        }
-                        $user   = User::create(
-                            [
-                                'name' => $request['name'],
-                                'email' => $request['email'],
-                                'password' => Hash::make($request['password']),
-                                'type' => $role_r->name,
-                                'branch_id' => $branch_id,
-                                'avatar' => $request['avatar'],
                                 'lang' => !empty($default_language) ? $default_language->value : '',
                                 'created_by' => \Auth::user()->id,
                             ]
@@ -183,7 +185,7 @@ class UserController extends Controller
             $roles = Role::where('created_by', '=', $user->creatorId())->where('name', '!=', 'employee')->get()->pluck('name', 'id');
             $branch = Branch::where('created_by', '=', $user->creatorId())->get()->pluck('name', 'id');
 
-            return view('user.edit', compact('user', 'roles','branch'));
+            return view('user.edit', compact('user', 'roles', 'branch'));
         } else {
             return response()->json(['error' => __('Permission denied.')], 401);
         }
@@ -208,15 +210,23 @@ class UserController extends Controller
             $user  = User::findOrFail($id);
 
             $input = $request->all();
-            
+
             $user->fill($input)->save();
         } else {
             $user = User::findOrFail($id);
 
             $role          = Role::findById($request->role);
-            $input         = $request->all();
-            $input['type'] = $role->name;
-            $user->fill($input)->save();
+            // $input         = $request->all();
+            // $input['type'] = $role->name;
+
+            // $user->fill($input)->save();
+            $user->name = $request->name;
+            $user->email = $request->email;
+            $user->type = $role->name;
+            $user->status = $request->status;
+            $user->note = $request->note;
+
+            $user->save();
 
             $user->assignRole($role);
         }
